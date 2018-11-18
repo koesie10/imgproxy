@@ -10,6 +10,7 @@ import "C"
 import (
 	"context"
 	"errors"
+	"fmt"
 	"log"
 	"math"
 	"os"
@@ -290,6 +291,8 @@ func transformImage(ctx context.Context, img **C.struct__VipsImage, data []byte,
 		imgWidth, imgHeight, _, _ = extractMeta(*img)
 	}
 
+	fmt.Println(po.AspectRatio, imgWidth, imgHeight)
+
 	if err = vipsImportColourProfile(img); err != nil {
 		return err
 	}
@@ -317,6 +320,7 @@ func transformImage(ctx context.Context, img **C.struct__VipsImage, data []byte,
 	checkTimeout(ctx)
 
 	cropW, cropH := po.Width, po.Height
+	fmt.Println(imgWidth, imgHeight, cropW, cropH)
 
 	if po.Dpr < 1 || (po.Dpr > 1 && po.Resize != resizeCrop) {
 		cropW = int(float64(cropW) * po.Dpr)
@@ -334,6 +338,23 @@ func transformImage(ctx context.Context, img **C.struct__VipsImage, data []byte,
 	} else {
 		cropH = minInt(cropH, imgHeight)
 	}
+
+	if po.AspectRatio != 0 {
+		//imgRatio := float64(cropW) / float64(cropH)
+
+		if po.Width == 0 {
+			cropW = int(math.Round(1 / po.AspectRatio * float64(cropH)))
+		} else {
+			cropH = int(math.Round(1 / po.AspectRatio * float64(cropW)))
+		}
+
+		/*if po.AspectRatio > imgRatio {
+
+		} else {
+			cropW = int(math.Round(po.AspectRatio * float64(cropH)))
+		}*/
+	}
+	fmt.Println(imgWidth, imgHeight, cropW, cropH)
 
 	if cropW < imgWidth || cropH < imgHeight {
 		if po.Gravity.Type == gravitySmart {
@@ -357,6 +378,8 @@ func transformImage(ctx context.Context, img **C.struct__VipsImage, data []byte,
 
 		checkTimeout(ctx)
 	}
+
+	fmt.Println(imgWidth, imgHeight, cropW, cropH)
 
 	if po.Enlarge && po.Resize == resizeCrop && po.Dpr > 1 {
 		// We didn't enlarge the image before, because is wasn't optimal. Now it's time to do it
@@ -385,6 +408,8 @@ func transformImage(ctx context.Context, img **C.struct__VipsImage, data []byte,
 			return err
 		}
 	}
+
+	fmt.Println(imgWidth, imgHeight, cropW, cropH)
 
 	checkTimeout(ctx)
 

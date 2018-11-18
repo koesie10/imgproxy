@@ -114,18 +114,19 @@ type watermarkOptions struct {
 }
 
 type processingOptions struct {
-	Resize     resizeType
-	Width      int
-	Height     int
-	Dpr        float64
-	Gravity    gravityOptions
-	Enlarge    bool
-	Format     imageType
-	Quality    int
-	Flatten    bool
-	Background color
-	Blur       float32
-	Sharpen    float32
+	Resize      resizeType
+	Width       int
+	Height      int
+	Dpr         float64
+	AspectRatio float64
+	Gravity     gravityOptions
+	Enlarge     bool
+	Format      imageType
+	Quality     int
+	Flatten     bool
+	Background  color
+	Blur        float32
+	Sharpen     float32
 
 	CacheBuster string
 
@@ -370,6 +371,35 @@ func applyResizeOption(po *processingOptions, args []string) error {
 		if err := applySizeOption(po, args[1:]); err != nil {
 			return err
 		}
+	}
+
+	return nil
+}
+
+func applyAspectRatioOption(po *processingOptions, args []string) error {
+	fmt.Println(args)
+	if len(args) > 2 {
+		return fmt.Errorf("Invalid aspect ratio arguments: %v", args)
+	}
+
+	if len(args) > 1 {
+		if w, err := strconv.ParseFloat(args[0], 64); err == nil && w > 0 {
+			if h, err := strconv.ParseFloat(args[1], 64); err == nil && h > 0 {
+				po.AspectRatio = w / h
+			} else {
+				return fmt.Errorf("Invalid aspect ratio height: %s", args[1])
+			}
+		} else {
+			return fmt.Errorf("Invalid aspect ratio width: %s", args[0])
+		}
+
+		return nil
+	}
+
+	if d, err := strconv.ParseFloat(args[0], 64); err == nil && d > 0 {
+		po.AspectRatio = d
+	} else {
+		return fmt.Errorf("Invalid aspect ratio: %s", args[0])
 	}
 
 	return nil
@@ -633,6 +663,10 @@ func applyProcessingOption(po *processingOptions, name string, args []string) er
 		if err := applyEnlargeOption(po, args); err != nil {
 			return err
 		}
+	case "aspect_ratio", "ar":
+		if err := applyAspectRatioOption(po, args); err != nil {
+			return err
+		}
 	case "dpr":
 		if err := applyDprOption(po, args); err != nil {
 			return err
@@ -719,6 +753,7 @@ func defaultProcessingOptions(headers *processingHeaders) (*processingOptions, e
 		Resize:      resizeFit,
 		Width:       0,
 		Height:      0,
+		AspectRatio: 0,
 		Gravity:     gravityOptions{Type: gravityCenter},
 		Enlarge:     false,
 		Quality:     conf.Quality,

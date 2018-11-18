@@ -316,6 +316,27 @@ func (s *ProcessingOptionsTestSuite) TestParsePathAdvancedDpr() {
 	po := getProcessingOptions(ctx)
 	assert.Equal(s.T(), 2.0, po.Dpr)
 }
+
+func (s *ProcessingOptionsTestSuite) TestParsePathAdvancedAspectRatio() {
+	req := s.getRequest("http://example.com/unsafe/ar:1.7/plain/http://images.dev/lorem/ipsum.jpg")
+	ctx, err := parsePath(context.Background(), req)
+
+	require.Nil(s.T(), err)
+
+	po := getProcessingOptions(ctx)
+	assert.Equal(s.T(), 1.7, po.AspectRatio)
+}
+
+func (s *ProcessingOptionsTestSuite) TestParsePathAdvancedAspectRatioExtended() {
+	req := s.getRequest("http://example.com/unsafe/ar:16:9/plain/http://images.dev/lorem/ipsum.jpg")
+	ctx, err := parsePath(context.Background(), req)
+
+	require.Nil(s.T(), err)
+
+	po := getProcessingOptions(ctx)
+	assert.Equal(s.T(), 16.0/9.0, po.AspectRatio)
+}
+
 func (s *ProcessingOptionsTestSuite) TestParsePathAdvancedWatermark() {
 	req := s.getRequest("http://example.com/unsafe/watermark:0.5:soea:10:20:0.6/plain/http://images.dev/lorem/ipsum.jpg")
 	ctx, err := parsePath(context.Background(), req)
